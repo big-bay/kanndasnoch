@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Eigene Retro-Tech-Videos kontrolliert mit TikTok verbinden und veröffentlichen.">
+  <meta name="theme-color" content="#0f172a">
+  <title>Publisher | Kann das noch?</title>
+  <link rel="icon" href="assets/icon.png" type="image/png">
+  <link rel="stylesheet" href="styles.css?v=20260923-1">
+  <script src="assets/publisher.js?v=20260923-1" type="module"></script>
+</head>
+<body class="app-body">
+  <a class="skip-link" href="#app-main">Zum Inhalt springen</a>
+  <header class="site-header app-header">
+    <a class="brand" href="index.html" aria-label="Publisher – zur Kann das noch? Startseite">
+      <img src="assets/icon.png" width="44" height="44" alt="Kann das noch? Logo">
+      <span>Publisher</span>
+    </a>
+    <div class="header-tools">
+      <span id="server-status" class="status-badge neutral"><span aria-hidden="true"></span> Server wird geprüft</span>
+      <button id="logout-button" class="text-button" type="button" hidden>Abmelden</button>
+    </div>
+  </header>
+
+  <main id="app-main" class="app-shell">
+    <noscript><div class="notice error">Für den Publisher muss JavaScript aktiviert sein.</div></noscript>
+    <div id="global-message" class="notice" role="status" aria-live="polite" hidden></div>
+    <section id="app-loading" class="app-loading" aria-label="Publisher wird geladen">
+      <div class="loading-line short"></div>
+      <div class="loading-line title"></div>
+      <div class="loading-line"></div>
+      <div class="loading-panel"></div>
+    </section>
+
+    <section id="login-panel" class="auth-layout" aria-labelledby="login-title" hidden>
+      <div class="auth-intro">
+        <p class="eyebrow">Geschlossene Creator-Beta</p>
+        <h1 id="login-title">Sicher zum eigenen TikTok-Post</h1>
+        <p class="lead">Melde dich mit der E-Mail-Adresse und dem einmaligen Code aus deiner Einladung an. Dein TikTok-Passwort wird ausschließlich auf der TikTok-Seite eingegeben.</p>
+        <ul class="check-list compact-list">
+          <li>Offizielle TikTok-Kontoverbindung</li>
+          <li>Eigene Videos statt fremder Reuploads</li>
+          <li>Bewusste Freigabe vor jedem Post</li>
+        </ul>
+      </div>
+      <form id="login-form" class="panel form-card" novalidate>
+        <div>
+          <p class="eyebrow">Beta-Anmeldung</p>
+          <h2>Einladung verwenden</h2>
+        </div>
+        <div class="field">
+          <label for="email">E-Mail-Adresse</label>
+          <input id="email" name="email" type="email" autocomplete="email" inputmode="email" required>
+        </div>
+        <div class="field">
+          <label for="invite-code">Einladungscode</label>
+          <input id="invite-code" name="inviteCode" type="password" autocomplete="one-time-code" required aria-describedby="invite-help">
+          <small id="invite-help">Der Code ist einmal nutzbar und läuft automatisch ab.</small>
+        </div>
+        <button class="button primary full-width" type="submit">Sicher anmelden</button>
+        <p class="form-footnote">Noch keine Einladung? <a href="mailto:kanndasnoch@gmail.com?subject=Beta-Zugang%20Publisher">Betazugang anfragen</a></p>
+      </form>
+    </section>
+
+    <section id="dashboard" hidden>
+      <div class="dashboard-heading">
+        <div>
+          <p class="eyebrow">Creator-Konsole</p>
+          <h1>Video veröffent&shy;lichen</h1>
+          <p id="welcome-copy">Konto verbinden, Video prüfen, bewusst posten.</p>
+        </div>
+        <span class="beta-label">BETA</span>
+      </div>
+
+      <section class="panel connection-card" aria-labelledby="connection-title">
+        <div class="connection-identity">
+          <div id="account-avatar" class="account-avatar" aria-hidden="true">@</div>
+          <div>
+            <p class="eyebrow">Schritt 1</p>
+            <h2 id="connection-title">TikTok-Konto</h2>
+            <p id="connection-copy">Verbindungsstatus wird geladen.</p>
+          </div>
+        </div>
+        <button id="connect-button" class="button primary" type="button" disabled>TikTok verbinden</button>
+      </section>
+
+      <form id="publish-form" class="publisher-grid" novalidate>
+        <section class="panel upload-card" aria-labelledby="upload-title">
+          <div class="card-heading">
+            <div><p class="eyebrow">Schritt 2</p><h2 id="upload-title">Eigenes Video</h2></div>
+            <span id="upload-state" class="micro-status">Noch keine Datei</span>
+          </div>
+          <label id="upload-zone" class="upload-zone" for="video-file">
+            <span class="upload-symbol" aria-hidden="true">MP4</span>
+            <strong>Video auswählen</strong>
+            <span id="upload-limits">MP4, MOV oder WebM · maximal 500 MB</span>
+            <input id="video-file" name="video" type="file" accept="video/mp4,video/quicktime,video/webm" required>
+          </label>
+          <video id="video-preview" controls preload="metadata" hidden></video>
+          <dl id="file-details" class="file-details" hidden>
+            <div><dt>Datei</dt><dd id="file-name"></dd></div>
+            <div><dt>Größe</dt><dd id="file-size"></dd></div>
+            <div><dt>Dauer</dt><dd id="file-duration"></dd></div>
+            <div><dt>Prüfsumme</dt><dd id="file-hash"></dd></div>
+          </dl>
+        </section>
+
+        <section class="panel settings-card" aria-labelledby="settings-title">
+          <div class="card-heading">
+            <div><p class="eyebrow">Schritt 3</p><h2 id="settings-title">Post prüfen</h2></div>
+            <span id="target-account" class="micro-status">Kein Zielkonto</span>
+          </div>
+          <div class="field">
+            <label for="caption">Beschreibung</label>
+            <textarea id="caption" name="caption" rows="7" maxlength="2200" required aria-describedby="caption-help"></textarea>
+            <small id="caption-help"><span id="caption-count">0</span> / 2200 Zeichen</small>
+          </div>
+          <div class="field">
+            <label for="privacy">Sichtbarkeit</label>
+            <select id="privacy" name="privacy" required disabled>
+              <option value="">Zuerst TikTok verbinden</option>
+            </select>
+            <small>Die Optionen kommen unmittelbar von TikTok und können sich je Konto ändern.</small>
+          </div>
+
+          <fieldset class="toggle-group">
+            <legend>Interaktionen</legend>
+            <label class="toggle-row disabled"><span><strong>Kommentare erlauben</strong><small>Zuschauer dürfen kommentieren.</small></span><input id="allow-comment" type="checkbox" disabled></label>
+            <label class="toggle-row disabled"><span><strong>Duette erlauben</strong><small>Andere dürfen ein Duett erstellen.</small></span><input id="allow-duet" type="checkbox" disabled></label>
+            <label class="toggle-row disabled"><span><strong>Stitches erlauben</strong><small>Andere dürfen einen Ausschnitt übernehmen.</small></span><input id="allow-stitch" type="checkbox" disabled></label>
+          </fieldset>
+
+          <fieldset class="toggle-group">
+            <legend>Kennzeichnungen</legend>
+            <label class="toggle-row"><span><strong>KI-generierter Inhalt</strong><small>Setzen, wenn TikToks KI-Kennzeichnung erforderlich ist.</small></span><input id="is-aigc" type="checkbox"></label>
+            <label class="toggle-row"><span><strong>Eigene Marke</strong><small>Der Inhalt bewirbt das eigene Unternehmen.</small></span><input id="brand-organic" type="checkbox"></label>
+            <label class="toggle-row"><span><strong>Bezahlte Partnerschaft</strong><small>Der Inhalt bewirbt ein anderes Unternehmen.</small></span><input id="brand-content" type="checkbox"></label>
+          </fieldset>
+
+          <label class="rights-check">
+            <input id="accepted-rights" type="checkbox" required>
+            <span>Ich habe die nötigen Rechte an Video, Ton, Text und Marken und möchte diesen Post mit den oben sichtbaren Einstellungen veröffentlichen.</span>
+          </label>
+          <button id="publish-button" class="button primary full-width" type="submit" disabled>Auf TikTok veröffentlichen</button>
+          <p class="form-footnote">Ein Klick startet genau einen Auftrag. Wiederholtes Senden erzeugt keine Dublette.</p>
+        </section>
+      </form>
+
+      <section class="panel history-card" aria-labelledby="history-title">
+        <div class="card-heading"><div><p class="eyebrow">Nachweis</p><h2 id="history-title">Letzte Aufträge</h2></div><button id="refresh-history" class="text-button" type="button">Aktualisieren</button></div>
+        <div id="history-empty" class="empty-state">Noch keine Veröffentlichungsaufträge.</div>
+        <ol id="history-list" class="history-list" aria-live="polite"></ol>
+      </section>
+    </section>
+  </main>
+
+  <footer>
+    <span>© 2026 Kann das noch?</span>
+    <span><a href="privacy.html">Datenschutz</a> · <a href="terms.html">Nutzungsbedingungen</a> · <a href="mailto:kanndasnoch@gmail.com">Hilfe</a></span>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,10 @@
+node_modules/
+.env
+.env.*
+!.env.example
+runtime/
+coverage/
+*.log
+review/*.webm
+review/*.mp4
+!review/setup-demo-draft.mp4

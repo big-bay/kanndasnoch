@@ -1,0 +1,198 @@
+openapi: 3.1.0
+info:
+  title: Kann das noch? Publisher API
+  version: 1.0.0
+  description: Server API for invite-only creators publishing their own videos through TikTok's official Content Posting API.
+servers:
+  - url: /
+security:
+  - sessionCookie: []
+paths:
+  /api/v1/health:
+    get:
+      security: []
+      operationId: getHealth
+      responses:
+        '200':
+          description: Service state without secrets.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, integrationConfigured, version, checkedAt]
+                properties:
+                  status: { const: ok }
+                  integrationConfigured: { type: boolean }
+                  version: { type: string }
+                  checkedAt: { type: string, format: date-time }
+  /api/v1/auth/session:
+    get:
+      security: []
+      operationId: getSessionState
+      responses:
+        '200': { description: Authentication state and current user when signed in. }
+    post:
+      security: []
+      operationId: redeemInvite
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [email, inviteCode]
+              properties:
+                email: { type: string, format: email, maxLength: 254 }
+                inviteCode: { type: string, minLength: 20, maxLength: 200 }
+      responses:
+        '201': { description: Invite redeemed and secure session cookie set. }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '429': { $ref: '#/components/responses/Problem' }
+    delete:
+      operationId: logout
+      responses:
+        '204': { description: Session revoked. }
+        '401': { $ref: '#/components/responses/Problem' }
+  /api/v1/me:
+    get:
+      operationId: getCurrentUser
+      responses:
+        '200':
+          description: Current beta user.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [user]
+                properties:
+                  user:
+                    type: object
+                    required: [email, label]
+                    properties:
+                      email: { type: string, format: email }
+                      label: { type: string }
+        '401': { $ref: '#/components/responses/Problem' }
+  /api/v1/tiktok/connection:
+    get:
+      operationId: getTikTokConnection
+      responses:
+        '200': { description: Current account identity and creator options. }
+        '401': { $ref: '#/components/responses/Problem' }
+        '503': { $ref: '#/components/responses/Problem' }
+  /api/v1/tiktok/connections:
+    post:
+      operationId: createTikTokConnectionLink
+      responses:
+        '200': { description: TikTok is already connected. }
+        '201':
+          description: Hosted OAuth URL created.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [redirectUrl]
+                properties:
+                  redirectUrl: { type: string, format: uri }
+        '401': { $ref: '#/components/responses/Problem' }
+        '503': { $ref: '#/components/responses/Problem' }
+  /api/v1/uploads:
+    post:
+      operationId: uploadVideo
+      parameters:
+        - name: X-File-Name
+          in: header
+          required: true
+          schema: { type: string, maxLength: 120 }
+        - name: X-Video-Duration-Seconds
+          in: header
+          required: true
+          description: Duration read from the selected local video before upload.
+          schema: { type: number, format: double, exclusiveMinimum: 0, maximum: 86400 }
+      requestBody:
+        required: true
+        content:
+          video/mp4: { schema: { type: string, format: binary } }
+          video/quicktime: { schema: { type: string, format: binary } }
+          video/webm: { schema: { type: string, format: binary } }
+      responses:
+        '200': { description: Identical upload already existed and was reused. }
+        '201': { description: Upload stored and hashed. }
+        '411': { $ref: '#/components/responses/Problem' }
+        '413': { $ref: '#/components/responses/Problem' }
+        '415': { $ref: '#/components/responses/Problem' }
+  /api/v1/publish-intents:
+    get:
+      operationId: listPublishIntents
+      responses:
+        '200': { description: Up to 20 most recent publish intents. }
+    post:
+      operationId: createPublishIntent
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: { type: string, minLength: 20, maxLength: 200, pattern: '^[A-Za-z0-9._:-]+$' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreatePublishIntent' }
+      responses:
+        '200': { description: Existing idempotent intent returned without a second initialization. }
+        '201': { description: One TikTok upload/publish initialization created. }
+        '400': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '502': { $ref: '#/components/responses/Problem' }
+  /api/v1/publish-intents/{intentId}:
+    get:
+      operationId: getPublishIntent
+      parameters:
+        - name: intentId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Local intent and freshly queried TikTok status when still processing. }
+        '404': { $ref: '#/components/responses/Problem' }
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: kdn_session
+  responses:
+    Problem:
+      description: Structured error response.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Problem' }
+  schemas:
+    CreatePublishIntent:
+      type: object
+      additionalProperties: false
+      required: [uploadId, caption, privacyLevel, acceptedRights]
+      properties:
+        uploadId: { type: string, maxLength: 100 }
+        caption: { type: string, minLength: 1, maxLength: 2200 }
+        privacyLevel:
+          enum: [PUBLIC_TO_EVERYONE, MUTUAL_FOLLOW_FRIENDS, FOLLOWER_OF_CREATOR, SELF_ONLY]
+        disableComment: { type: boolean, default: false }
+        disableDuet: { type: boolean, default: false }
+        disableStitch: { type: boolean, default: false }
+        isAigc: { type: boolean, default: false }
+        brandContentToggle: { type: boolean, default: false }
+        brandOrganicToggle: { type: boolean, default: false }
+        acceptedRights: { const: true }
+    Problem:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string }
+            message: { type: string }
+            details: { type: object, additionalProperties: true }

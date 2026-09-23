@@ -1,0 +1,20 @@
+{
+  "name": "kanndasnoch-publisher",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Invite-only creator publishing app for the official TikTok Content Posting API.",
+  "engines": {
+    "node": ">=22.22.3"
+  },
+  "scripts": {
+    "start": "node server/server.mjs",
+    "dev": "node --watch server/server.mjs",
+    "test": "node --test",
+    "check": "node --check server/server.mjs && node --check server/lib/database.mjs && node --check server/lib/composio.mjs && node --check server/lib/security.mjs && node --check assets/publisher.js && npm test",
+    "invite": "node server/cli/create-invite.mjs"
+  },
+  "dependencies": {
+    "@composio/core": "0.19.0"
+  }
+}
