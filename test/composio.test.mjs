@@ -2,13 +2,22 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { TikTokComposioService } from '../server/lib/composio.mjs';
 
-function serviceFixture(creator) {
+function serviceFixture(creator, executeResponse = { data: { data: { publish_id: 'publish-test-1' }, successful: true } }) {
   const service = Object.create(TikTokComposioService.prototype);
   let execution;
+  let staging;
   const session = {
     async execute(tool, input) {
       execution = { tool, input };
-      return { data: { publish_id: 'publish-test-1' } };
+      return executeResponse;
+    }
+  };
+  service.client = {
+    files: {
+      async upload(input) {
+        staging = input;
+        return { name: 'video.mp4', mimetype: 'video/mp4', s3key: 'staged/tiktok/video.mp4' };
+      }
     }
   };
   service.connectionState = async () => ({ connected: true, session });
@@ -22,7 +31,7 @@ function serviceFixture(creator) {
     stitchDisabled: false,
     ...creator
   });
-  return { service, getExecution: () => execution };
+  return { service, getExecution: () => execution, getStaging: () => staging };
 }
 
 function intentFixture() {
@@ -39,13 +48,23 @@ function intentFixture() {
 }
 
 test('creator restrictions are enforced in the TikTok upload request', async () => {
-  const { service, getExecution } = serviceFixture({ commentDisabled: true, stitchDisabled: true });
+  const { service, getExecution, getStaging } = serviceFixture({ commentDisabled: true, stitchDisabled: true });
   const result = await service.publish('user-1', intentFixture(), {
     local_path: 'D:/safe/video.mp4',
     duration_seconds: 12.5
   });
   assert.equal(result.publishId, 'publish-test-1');
+  assert.deepEqual(getStaging(), {
+    file: 'D:/safe/video.mp4',
+    toolSlug: 'TIKTOK_UPLOAD_VIDEO',
+    toolkitSlug: 'tiktok'
+  });
   assert.equal(getExecution().tool, 'TIKTOK_UPLOAD_VIDEO');
+  assert.deepEqual(getExecution().input.file_to_upload, {
+    name: 'video.mp4',
+    mimetype: 'video/mp4',
+    s3key: 'staged/tiktok/video.mp4'
+  });
   assert.equal(getExecution().input.disable_comment, true);
   assert.equal(getExecution().input.disable_duet, false);
   assert.equal(getExecution().input.disable_stitch, true);
@@ -61,4 +80,23 @@ test('video longer than the fresh creator limit is rejected before upload initia
     error => error.code === 'video_duration_too_long' && error.status === 409
   );
   assert.equal(getExecution(), undefined);
+});
+
+test('nested Composio validation failures are surfaced instead of becoming missing publish IDs', async () => {
+  const { service } = serviceFixture({}, {
+    data: {
+      successfull: false,
+      successful: false,
+      error: 'Input should be a valid FileUploadable object',
+      data: { status_code: 400 }
+    },
+    error: null
+  });
+  await assert.rejects(
+    service.publish('user-1', intentFixture(), {
+      local_path: 'D:/safe/video.mp4',
+      duration_seconds: 12.5
+    }),
+    error => error.code === '400' && /FileUploadable/.test(error.message)
+  );
 });

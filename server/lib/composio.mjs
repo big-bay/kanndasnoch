@@ -22,16 +22,29 @@ function findDeep(value, keys) {
 }
 
 function unwrap(result) {
-  if (result?.successful === false || result?.success === false) {
-    const message = findDeep(result, ['message', 'error_message']) || 'TikTok hat die Anfrage abgelehnt.';
-    const code = findDeep(result, ['error_code', 'code']) || 'tiktok_request_failed';
+  const payload = result?.data ?? result;
+  const resultError = typeof result?.error === 'string' && result.error.trim() ? result.error.trim() : '';
+  const payloadError = typeof payload?.error === 'string' && payload.error.trim() ? payload.error.trim() : '';
+  const failed = result?.successful === false
+    || result?.success === false
+    || payload?.successful === false
+    || payload?.successfull === false
+    || payload?.success === false
+    || Boolean(resultError)
+    || Boolean(payloadError);
+  if (failed) {
+    const message = resultError
+      || payloadError
+      || findDeep(payload, ['message', 'error_message'])
+      || 'TikTok hat die Anfrage abgelehnt.';
+    const code = findDeep(payload, ['error_code', 'code', 'status_code']) || 'tiktok_request_failed';
     throw httpError(502, String(code), String(message));
   }
-  const apiError = findDeep(result, ['error']);
+  const apiError = findDeep(payload, ['error']);
   if (apiError && typeof apiError === 'object' && apiError.code && apiError.code !== 'ok') {
     throw httpError(502, String(apiError.code), String(apiError.message || 'TikTok hat die Anfrage abgelehnt.'));
   }
-  return result?.data ?? result;
+  return payload;
 }
 
 function arrayDeep(value, keys) {
@@ -173,8 +186,13 @@ export class TikTokComposioService {
       if (duplicate) throw httpError(409, 'public_duplicate_detected', 'Ein öffentlicher TikTok-Beitrag mit identischem Text ist bereits vorhanden.');
     }
 
+    const stagedFile = await this.client.files.upload({
+      file: upload.local_path,
+      toolSlug: 'TIKTOK_UPLOAD_VIDEO',
+      toolkitSlug: 'tiktok'
+    });
     const result = unwrap(await state.session.execute('TIKTOK_UPLOAD_VIDEO', {
-      file_to_upload: upload.local_path,
+      file_to_upload: stagedFile,
       publish: true,
       caption: intent.caption,
       privacy_level: intent.privacy_level,
