@@ -40,5 +40,4 @@ install -o root -g root -m 0644 "$app_dir/deploy/kanndasnoch-publisher.service" 
 systemctl daemon-reload
 systemctl enable --now kanndasnoch-publisher.service
 systemctl is-active --quiet kanndasnoch-publisher.service
-curl --fail --silent --show-error http://127.0.0.1:8787/api/v1/health
-
+curl --fail --silent --show-error --retry 10 --retry-all-errors --retry-delay 1 http://127.0.0.1:8787/api/v1/health
