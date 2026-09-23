@@ -96,6 +96,19 @@ export function httpError(status, code, message, details) {
   return error;
 }
 
+export function validateCommercialContent({ commercialContent, brandOrganic, brandContent, privacyLevel }) {
+  if (!commercialContent && (brandOrganic || brandContent)) {
+    throw httpError(400, 'commercial_disclosure_inconsistent', 'Kommerzielle Kennzeichnungen benötigen die aktivierte Inhaltsangabe.');
+  }
+  if (commercialContent && !brandOrganic && !brandContent) {
+    throw httpError(400, 'commercial_disclosure_required', 'Gib an, ob der Inhalt dich, eine dritte Partei oder beide bewirbt.');
+  }
+  if (brandContent && privacyLevel === 'SELF_ONLY') {
+    throw httpError(400, 'branded_content_private_not_allowed', 'Bezahlte Partnerschaften können nicht mit „Nur ich“ veröffentlicht werden.');
+  }
+  return { brandOrganic: Boolean(brandOrganic), brandContent: Boolean(brandContent) };
+}
+
 export function validateEmail(value) {
   if (typeof value !== 'string') return null;
   const normalized = value.trim().toLowerCase();

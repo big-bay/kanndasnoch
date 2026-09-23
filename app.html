@@ -134,13 +134,17 @@
           <fieldset class="toggle-group">
             <legend>Kennzeichnungen</legend>
             <label class="toggle-row"><span><strong>KI-generierter Inhalt</strong><small>Setzen, wenn TikToks KI-Kennzeichnung erforderlich ist.</small></span><input id="is-aigc" type="checkbox"></label>
-            <label class="toggle-row"><span><strong>Eigene Marke</strong><small>Der Inhalt bewirbt das eigene Unternehmen.</small></span><input id="brand-organic" type="checkbox"></label>
-            <label class="toggle-row"><span><strong>Bezahlte Partnerschaft</strong><small>Der Inhalt bewirbt ein anderes Unternehmen.</small></span><input id="brand-content" type="checkbox"></label>
+            <label class="toggle-row"><span><strong>Kommerzielle Inhalte</strong><small>Aktivieren, wenn der Beitrag dich, eine Marke, ein Produkt oder eine Dienstleistung bewirbt.</small></span><input id="commercial-content" type="checkbox"></label>
+            <div id="commercial-options" class="commercial-options" hidden>
+              <label class="toggle-row"><span><strong>Eigene Marke</strong><small>Der Beitrag wird als „Werbeinhalte“ gekennzeichnet.</small></span><input id="brand-organic" type="checkbox" disabled></label>
+              <label class="toggle-row"><span><strong>Bezahlte Partnerschaft</strong><small>Der Beitrag wird als „Bezahlte Partnerschaft“ gekennzeichnet.</small></span><input id="brand-content" type="checkbox" disabled></label>
+              <p id="commercial-note" class="commercial-note" role="status"></p>
+            </div>
           </fieldset>
 
           <label class="rights-check">
             <input id="accepted-rights" type="checkbox" required>
-            <span>Ich habe die nötigen Rechte an Video, Ton, Text und Marken und möchte diesen Post mit den oben sichtbaren Einstellungen veröffentlichen.</span>
+            <span id="rights-copy">Ich habe die nötigen Rechte an Video, Ton, Text und Marken. Mit dem Veröffentlichen stimme ich TikToks Music Usage Confirmation zu.</span>
           </label>
           <button id="publish-button" class="button primary full-width" type="submit" disabled>Auf TikTok veröffentlichen</button>
           <p class="form-footnote">Ein Klick startet genau einen Auftrag. Wiederholtes Senden erzeugt keine Dublette.</p>

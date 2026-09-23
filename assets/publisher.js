@@ -4,8 +4,9 @@ const elements = Object.fromEntries(
     'welcome-copy', 'connection-copy', 'connect-button', 'account-avatar', 'target-account',
     'publish-form', 'video-file', 'upload-zone', 'upload-state', 'video-preview', 'file-details',
     'file-name', 'file-size', 'file-duration', 'file-hash', 'upload-limits', 'caption', 'caption-count', 'privacy',
-    'allow-comment', 'allow-duet', 'allow-stitch', 'is-aigc', 'brand-organic',
-    'brand-content', 'accepted-rights', 'publish-button', 'refresh-history', 'history-empty',
+    'allow-comment', 'allow-duet', 'allow-stitch', 'is-aigc', 'commercial-content',
+    'commercial-options', 'commercial-note', 'brand-organic', 'brand-content', 'accepted-rights',
+    'rights-copy', 'publish-button', 'refresh-history', 'history-empty',
     'history-list'
   ].map(id => [id, document.getElementById(id)])
 );
@@ -134,9 +135,43 @@ function setBusy(busy, label) {
 }
 
 function updatePublishButton() {
-  const ready = state.creator?.connected && state.upload && elements.caption.value.trim() && elements.privacy.value && elements['accepted-rights'].checked && !state.busy && !state.intent;
+  const commercialValid = !elements['commercial-content'].checked || elements['brand-organic'].checked || elements['brand-content'].checked;
+  const privacyValid = !(elements['brand-content'].checked && elements.privacy.value === 'SELF_ONLY');
+  const ready = state.creator?.connected && state.upload && elements.caption.value.trim() && elements.privacy.value && elements['accepted-rights'].checked && commercialValid && privacyValid && !state.busy && !state.intent;
   elements['publish-button'].disabled = !ready;
   if (!state.busy) elements['publish-button'].textContent = state.intent ? 'Auftrag bereits gestartet' : 'Auf TikTok veröffentlichen';
+}
+
+function syncCommercialContent() {
+  const enabled = elements['commercial-content'].checked;
+  elements['commercial-options'].hidden = !enabled;
+  elements['brand-organic'].disabled = !enabled;
+  if (!enabled) {
+    elements['brand-organic'].checked = false;
+    elements['brand-content'].checked = false;
+  }
+
+  const selfOnly = elements.privacy.value === 'SELF_ONLY';
+  if (selfOnly) elements['brand-content'].checked = false;
+  elements['brand-content'].disabled = !enabled || selfOnly;
+  const branded = enabled && elements['brand-content'].checked;
+  const selfOnlyOption = Array.from(elements.privacy.options).find(option => option.value === 'SELF_ONLY');
+  if (selfOnlyOption) selfOnlyOption.disabled = branded;
+
+  elements['commercial-note'].classList.toggle('error', enabled && !elements['brand-organic'].checked && !elements['brand-content'].checked);
+  elements['commercial-note'].textContent = !enabled
+    ? ''
+    : selfOnly
+      ? 'Bezahlte Partnerschaften können nicht mit „Nur ich“ veröffentlicht werden.'
+      : branded
+        ? 'Der Beitrag wird als „Bezahlte Partnerschaft“ gekennzeichnet.'
+        : elements['brand-organic'].checked
+          ? 'Der Beitrag wird als „Werbeinhalte“ gekennzeichnet.'
+          : 'Wähle „Eigene Marke“, „Bezahlte Partnerschaft“ oder beides.';
+  elements['rights-copy'].textContent = branded
+    ? 'Ich habe die nötigen Rechte. Mit dem Veröffentlichen stimme ich TikToks Branded Content Policy und Music Usage Confirmation zu.'
+    : 'Ich habe die nötigen Rechte an Video, Ton, Text und Marken. Mit dem Veröffentlichen stimme ich TikToks Music Usage Confirmation zu.';
+  updatePublishButton();
 }
 
 function renderCreator(creator) {
@@ -162,9 +197,10 @@ function renderCreator(creator) {
   }
 
   const username = creator.username ? `@${creator.username}` : 'Verbundenes TikTok-Konto';
-  elements['connection-copy'].textContent = `${username} ist über TikTok OAuth verbunden.`;
+  const identity = creator.displayName ? `${creator.displayName} (${username})` : username;
+  elements['connection-copy'].textContent = `${identity} ist über TikTok OAuth verbunden.`;
   elements['connect-button'].hidden = true;
-  elements['target-account'].textContent = username;
+  elements['target-account'].textContent = identity;
   if (creator.avatarUrl) {
     const image = document.createElement('img');
     image.src = creator.avatarUrl;
@@ -198,7 +234,7 @@ function renderCreator(creator) {
     elements[id].disabled = Boolean(disabled);
     elements[id].closest('.toggle-row').classList.toggle('disabled', Boolean(disabled));
   }
-  updatePublishButton();
+  syncCommercialContent();
 }
 
 async function loadCreator() {
@@ -397,12 +433,19 @@ elements.caption.addEventListener('input', () => {
   elements['caption-count'].textContent = String(elements.caption.value.length);
   updatePublishButton();
 });
-elements.privacy.addEventListener('change', updatePublishButton);
+elements.privacy.addEventListener('change', syncCommercialContent);
+elements['commercial-content'].addEventListener('change', syncCommercialContent);
+elements['brand-organic'].addEventListener('change', syncCommercialContent);
+elements['brand-content'].addEventListener('change', syncCommercialContent);
 elements['accepted-rights'].addEventListener('change', updatePublishButton);
 
 elements['publish-form'].addEventListener('submit', async event => {
   event.preventDefault();
   if (!event.currentTarget.reportValidity() || !state.upload || !state.creator?.connected || state.intent) return;
+  if (elements['commercial-content'].checked && !elements['brand-organic'].checked && !elements['brand-content'].checked) {
+    message('Gib an, ob der kommerzielle Inhalt dich, eine dritte Partei oder beide bewirbt.', 'error');
+    return;
+  }
   setBusy(true, 'Veröffentlichung wird gestartet…');
   message('Zielkonto und aktuelle TikTok-Optionen werden noch einmal geprüft.');
   try {
@@ -420,6 +463,7 @@ elements['publish-form'].addEventListener('submit', async event => {
         disableDuet: !elements['allow-duet'].checked,
         disableStitch: !elements['allow-stitch'].checked,
         isAigc: elements['is-aigc'].checked,
+        commercialContent: elements['commercial-content'].checked,
         brandOrganicToggle: elements['brand-organic'].checked,
         brandContentToggle: elements['brand-content'].checked,
         acceptedRights: elements['accepted-rights'].checked

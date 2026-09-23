@@ -16,6 +16,7 @@ import {
   readJson,
   sanitizeFileName,
   sessionCookie,
+  validateCommercialContent,
   validateEmail
 } from './lib/security.mjs';
 
@@ -278,6 +279,12 @@ async function handleApi(request, response, url) {
       throw httpError(400, 'invalid_privacy_level', 'Die gewählte Sichtbarkeit ist ungültig.');
     }
     if (body.acceptedRights !== true) throw httpError(400, 'rights_confirmation_required', 'Bestätige vor dem Veröffentlichen deine Rechte am Inhalt.');
+    const commercial = validateCommercialContent({
+      commercialContent: body.commercialContent === true,
+      brandOrganic: body.brandOrganicToggle === true,
+      brandContent: body.brandContentToggle === true,
+      privacyLevel
+    });
 
     const { intent, created } = database.createOrGetIntent({
       userId: user.id,
@@ -289,8 +296,8 @@ async function handleApi(request, response, url) {
       disableDuet: body.disableDuet === true,
       disableStitch: body.disableStitch === true,
       isAigc: body.isAigc === true,
-      brandContentToggle: body.brandContentToggle === true,
-      brandOrganicToggle: body.brandOrganicToggle === true,
+      brandContentToggle: commercial.brandContent,
+      brandOrganicToggle: commercial.brandOrganic,
       acceptedRights: true
     });
     if (!created) return json(response, 200, { intent: publicIntent(database.getIntent(user.id, intent.id)), replayed: true });

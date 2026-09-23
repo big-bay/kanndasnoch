@@ -6,6 +6,7 @@ import {
   sessionCookie,
   sha256,
   safeEqualHex,
+  validateCommercialContent,
   validateEmail
 } from '../server/lib/security.mjs';
 
@@ -33,4 +34,19 @@ test('constant-time hash comparison distinguishes tokens', () => {
   const left = sha256('alpha');
   assert.equal(safeEqualHex(left, sha256('alpha')), true);
   assert.equal(safeEqualHex(left, sha256('beta')), false);
+});
+
+test('commercial disclosure requires a selection and rejects branded private posts', () => {
+  assert.deepEqual(
+    validateCommercialContent({ commercialContent: false, brandOrganic: false, brandContent: false, privacyLevel: 'SELF_ONLY' }),
+    { brandOrganic: false, brandContent: false }
+  );
+  assert.throws(
+    () => validateCommercialContent({ commercialContent: true, brandOrganic: false, brandContent: false, privacyLevel: 'PUBLIC_TO_EVERYONE' }),
+    error => error.code === 'commercial_disclosure_required'
+  );
+  assert.throws(
+    () => validateCommercialContent({ commercialContent: true, brandOrganic: false, brandContent: true, privacyLevel: 'SELF_ONLY' }),
+    error => error.code === 'branded_content_private_not_allowed'
+  );
 });

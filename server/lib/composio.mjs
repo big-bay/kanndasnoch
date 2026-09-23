@@ -27,6 +27,10 @@ function unwrap(result) {
     const code = findDeep(result, ['error_code', 'code']) || 'tiktok_request_failed';
     throw httpError(502, String(code), String(message));
   }
+  const apiError = findDeep(result, ['error']);
+  if (apiError && typeof apiError === 'object' && apiError.code && apiError.code !== 'ok') {
+    throw httpError(502, String(apiError.code), String(apiError.message || 'TikTok hat die Anfrage abgelehnt.'));
+  }
   return result?.data ?? result;
 }
 
@@ -111,8 +115,8 @@ export class TikTokComposioService {
     return {
       connected: true,
       username: String(findDeep(profile, ['username']) || ''),
-      displayName: String(findDeep(profile, ['display_name', 'displayName']) || ''),
-      avatarUrl: String(findDeep(profile, ['avatar_url', 'avatarUrl']) || ''),
+      displayName: String(findDeep(creator, ['creator_nickname', 'creatorNickname']) || findDeep(profile, ['display_name', 'displayName']) || ''),
+      avatarUrl: String(findDeep(creator, ['creator_avatar_url', 'creatorAvatarUrl']) || findDeep(profile, ['avatar_url', 'avatarUrl']) || ''),
       profileUrl: String(findDeep(profile, ['profile_deep_link', 'profileDeepLink']) || ''),
       privacyOptions: arrayDeep(creator, ['privacy_level_options', 'privacyLevelOptions']).map(String),
       maxVideoDurationSeconds: Number(findDeep(creator, ['max_video_post_duration_sec', 'maxVideoPostDurationSec']) || 0),

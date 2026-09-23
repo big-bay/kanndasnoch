@@ -246,6 +246,9 @@ footer a { display: inline-block; min-height: 32px; padding-block: 3px; }
 .toggle-row input { width: 22px; height: 22px; flex: 0 0 auto; accent-color: var(--color-accent); cursor: pointer; }
 .toggle-row.disabled { cursor: not-allowed; opacity: .52; }
 .toggle-row.disabled input { cursor: not-allowed; }
+.commercial-options { margin: 0 0 4px 20px; padding-left: 16px; border-left: 2px solid var(--color-border); }
+.commercial-note { margin: 12px 0 4px; color: var(--color-muted-foreground); font-size: .9rem; }
+.commercial-note.error { color: #fecaca; }
 .rights-check { display: flex; align-items: flex-start; gap: 12px; margin: 28px 0 20px; padding: 16px; border: 1px solid rgba(96,165,250,.3); border-radius: var(--radius-sm); background: rgba(96,165,250,.06); cursor: pointer; }
 .rights-check input { width: 22px; height: 22px; flex: 0 0 auto; margin-top: 3px; accent-color: var(--color-accent); }
 .history-card { margin-top: 24px; }
