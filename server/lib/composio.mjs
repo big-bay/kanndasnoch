@@ -205,7 +205,14 @@ export class TikTokComposioService {
     }));
     const publishId = findDeep(result, ['publish_id', 'publishId']);
     if (!publishId) throw httpError(502, 'missing_publish_id', 'TikTok hat keine Veröffentlichungs-ID zurückgegeben.');
-    return { publishId: String(publishId), username: creator.username, result };
+    return {
+      publishId: String(publishId),
+      username: creator.username,
+      result: {
+        published: Boolean(findDeep(result, ['published'])),
+        uploadCompleted: Boolean(findDeep(result, ['upload_completed', 'uploadCompleted']))
+      }
+    };
   }
 
   async publishStatus(userId, publishId) {

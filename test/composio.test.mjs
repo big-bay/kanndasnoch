@@ -2,7 +2,17 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { TikTokComposioService } from '../server/lib/composio.mjs';
 
-function serviceFixture(creator, executeResponse = { data: { data: { publish_id: 'publish-test-1' }, successful: true } }) {
+function serviceFixture(creator, executeResponse = {
+  data: {
+    data: {
+      publish_id: 'publish-test-1',
+      published: true,
+      upload_completed: true,
+      upload_url: 'https://temporary-upload.invalid/signed-secret'
+    },
+    successful: true
+  }
+}) {
   const service = Object.create(TikTokComposioService.prototype);
   let execution;
   let staging;
@@ -54,6 +64,8 @@ test('creator restrictions are enforced in the TikTok upload request', async () 
     duration_seconds: 12.5
   });
   assert.equal(result.publishId, 'publish-test-1');
+  assert.deepEqual(result.result, { published: true, uploadCompleted: true });
+  assert.equal(JSON.stringify(result).includes('upload_url'), false);
   assert.deepEqual(getStaging(), {
     file: 'D:/safe/video.mp4',
     toolSlug: 'TIKTOK_UPLOAD_VIDEO',
