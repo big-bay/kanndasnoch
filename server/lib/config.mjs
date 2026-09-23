@@ -32,11 +32,21 @@ function integer(name, fallback, minimum, maximum) {
 function baseUrl(value) {
   const parsed = new URL(value);
   if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('PUBLIC_BASE_URL muss HTTP(S) verwenden.');
+  if (parsed.username || parsed.password || parsed.search || parsed.hash) {
+    throw new Error('PUBLIC_BASE_URL darf keine Zugangsdaten, Abfrage oder Fragment enthalten.');
+  }
   return parsed.origin + parsed.pathname.replace(/\/$/, '');
+}
+
+function origin(value) {
+  const parsed = new URL(value);
+  if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('ALLOWED_ORIGINS muss HTTP(S) verwenden.');
+  return parsed.origin;
 }
 
 const dataDir = path.resolve(projectRoot, process.env.DATA_DIR || 'runtime');
 const publicBaseUrl = baseUrl(process.env.PUBLIC_BASE_URL || 'http://127.0.0.1:8787');
+const publicUrl = new URL(publicBaseUrl);
 
 export const config = Object.freeze({
   projectRoot,
@@ -46,18 +56,20 @@ export const config = Object.freeze({
   host: process.env.HOST || '127.0.0.1',
   port: integer('PORT', 8787, 1, 65535),
   publicBaseUrl,
+  cookiePath: publicUrl.pathname === '/' ? '/' : publicUrl.pathname,
   allowedOrigins: new Set(
-    (process.env.ALLOWED_ORIGINS || publicBaseUrl)
+    (process.env.ALLOWED_ORIGINS || publicUrl.origin)
       .split(',')
       .map(value => value.trim())
       .filter(Boolean)
+      .map(origin)
   ),
   sessionTtlDays: integer('SESSION_TTL_DAYS', 30, 1, 90),
   maxUploadBytes: integer('MAX_UPLOAD_BYTES', 500_000_000, 1_000_000, 4_000_000_000),
   composioApiKey: process.env.COMPOSIO_API_KEY || '',
   composioTikTokAuthConfigId: process.env.COMPOSIO_TIKTOK_AUTH_CONFIG_ID || '',
   composioReady: Boolean(process.env.COMPOSIO_API_KEY && process.env.COMPOSIO_TIKTOK_AUTH_CONFIG_ID),
-  secureCookies: new URL(publicBaseUrl).protocol === 'https:'
+  secureCookies: publicUrl.protocol === 'https:'
 });
 
 fs.mkdirSync(config.uploadsDir, { recursive: true });

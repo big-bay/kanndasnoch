@@ -20,6 +20,8 @@ const state = {
   busy: false
 };
 
+const appBaseUrl = new URL('.', location.href);
+
 const privacyLabels = {
   PUBLIC_TO_EVERYONE: 'Öffentlich',
   MUTUAL_FOLLOW_FRIENDS: 'Freunde (gegenseitiges Folgen)',
@@ -50,7 +52,8 @@ function message(text, kind = 'info') {
 }
 
 async function api(path, options = {}) {
-  const response = await fetch(path, {
+  const endpoint = new URL(String(path).replace(/^\/+/, ''), appBaseUrl);
+  const response = await fetch(endpoint, {
     credentials: 'same-origin',
     ...options,
     headers: { ...(options.headers || {}) }

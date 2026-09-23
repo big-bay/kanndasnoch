@@ -16,10 +16,11 @@ test('email normalization accepts normal addresses and rejects malformed input',
 });
 
 test('session cookie is HttpOnly, SameSite and optionally Secure', () => {
-  const cookie = sessionCookie('secret token', { secure: true, maxAgeSeconds: 60 });
+  const cookie = sessionCookie('secret token', { secure: true, maxAgeSeconds: 60, path: '/kanndasnoch' });
   assert.match(cookie, /HttpOnly/);
   assert.match(cookie, /SameSite=Lax/);
   assert.match(cookie, /Secure/);
+  assert.match(cookie, /Path=\/kanndasnoch/);
   assert.equal(parseCookies(cookie).kdn_session, 'secret token');
 });
 

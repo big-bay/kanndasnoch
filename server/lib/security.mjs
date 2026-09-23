@@ -29,10 +29,10 @@ export function parseCookies(header = '') {
   return result;
 }
 
-export function sessionCookie(token, { secure, maxAgeSeconds }) {
+export function sessionCookie(token, { secure, maxAgeSeconds, path = '/' }) {
   const attributes = [
     `kdn_session=${encodeURIComponent(token)}`,
-    'Path=/',
+    `Path=${path}`,
     'HttpOnly',
     'SameSite=Lax',
     `Max-Age=${maxAgeSeconds}`
@@ -41,8 +41,8 @@ export function sessionCookie(token, { secure, maxAgeSeconds }) {
   return attributes.join('; ');
 }
 
-export function clearSessionCookie(secure) {
-  return sessionCookie('', { secure, maxAgeSeconds: 0 });
+export function clearSessionCookie(secure, path = '/') {
+  return sessionCookie('', { secure, maxAgeSeconds: 0, path });
 }
 
 export function applySecurityHeaders(response, { development = false } = {}) {

@@ -1,0 +1,29 @@
+[Unit]
+Description=Kann das noch? TikTok Publisher
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=kanndasnoch-publisher
+Group=kanndasnoch-publisher
+WorkingDirectory=/opt/kanndasnoch-publisher
+Environment=NODE_ENV=production
+EnvironmentFile=/etc/kanndasnoch-publisher.env
+ExecStart=/usr/bin/node server/server.mjs
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+PrivateDevices=true
+PrivateTmp=true
+ProtectControlGroups=true
+ProtectHome=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/kanndasnoch-publisher
+RestrictSUIDSGID=true
+
+[Install]
+WantedBy=multi-user.target

@@ -193,7 +193,8 @@ async function handleApi(request, response, url) {
     }, {
       'Set-Cookie': sessionCookie(redeemed.sessionToken, {
         secure: config.secureCookies,
-        maxAgeSeconds: config.sessionTtlDays * 86_400
+        maxAgeSeconds: config.sessionTtlDays * 86_400,
+        path: config.cookiePath
       })
     });
   }
@@ -211,7 +212,7 @@ async function handleApi(request, response, url) {
     requireOrigin(request);
     const { token } = requireUser(request);
     database.revokeSession(token);
-    return noContent(response, { 'Set-Cookie': clearSessionCookie(config.secureCookies) });
+    return noContent(response, { 'Set-Cookie': clearSessionCookie(config.secureCookies, config.cookiePath) });
   }
 
   if (request.method === 'GET' && url.pathname === '/api/v1/me') {

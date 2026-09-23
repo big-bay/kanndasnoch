@@ -1,0 +1,12 @@
+# Innerhalb des vorhandenen :8095-Site-Blocks vor dem Fallback einsetzen.
+@kanndasnochRoot path /kanndasnoch
+redir @kanndasnochRoot /kanndasnoch/ 308
+
+handle_path /kanndasnoch/* {
+  reverse_proxy 127.0.0.1:8787
+}
+
+# Der vorhandene Netzkarte-Fallback muss danach in einem `handle`-Block stehen:
+# handle {
+#   reverse_proxy 192.168.0.148:8095
+# }

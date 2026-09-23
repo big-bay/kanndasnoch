@@ -35,6 +35,8 @@ npm run invite -- --email creator@example.com --label "Creator-Name" --days 7
 
 Der ausgegebene Code ist ein Geheimnis, wird nur als SHA-256-Prüfsumme gespeichert und darf nicht in Repository, Protokoll oder Chat kopiert werden.
 
+Der Betrieb unter einem HTTPS-Unterpfad wird unterstützt. Die geprüfte LXC-/Caddy-Vorlage liegt unter [`deploy/`](deploy/README.md).
+
 ## Serverkonfiguration
 
 | Variable | Zweck |
